@@ -1,0 +1,37 @@
+<!-- Page Properties -->
+<% page_id = "login-page" %>
+
+<!-- HEADER -->
+<%- 
+  include("partials/header.ejs", 
+  { 
+    title: title,
+    page_id: page_id
+  }) 
+%>
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm-6">
+      <form action="/login" method="POST">
+        <input type="text" name="_csrf" value="<%= _csrf %>"/>
+        <input type="text" name="username"/>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JAVASCRIPT CDNs AND SCRIPTS -->
+<%- 
+  include("partials/scripts.ejs", 
+  { 
+    page_id: page_id
+  })
+%>
+
+<!-- VUE COMPONENTS -->
+<%- include("vue/components/button-counter.ejs") %>
+
+<!-- VUE SCRIPT -->
+<%- include("vue/home.ejs") %>
