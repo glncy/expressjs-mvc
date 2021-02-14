@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node ./bin/www",
     "dev": "nodemon ./bin/www",
-    "build": "ncc build ./bin/www -m",
+    "build": "ncc build ./bin/www -m && chmod +x ./build.sh && sh ./build.sh",
     "test-build": "node ./dist/index.js"
   },
   "dependencies": {
@@ -26,5 +26,8 @@
     "sequelize": "^5.21.6",
     "sqlite3": "^4.2.0",
     "tedious": "^8.3.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.27.0"
   }
 }

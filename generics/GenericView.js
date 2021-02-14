@@ -40,53 +40,59 @@ const createError = require('http-errors');
 const { getPagination, getPagingData } = require('./../functions/pagination');
 
 class GenericView {
-    template_options = {
-        query_result: undefined
-    }
-    query = undefined;
-    order = undefined;
-    attributes = undefined;
-    pagination = true;
-    lookup_field = "id";
-    object_name = "obj";
     
+    constructor(){
+
+        // Initial Values
+        this.template_options = {
+            query_result: undefined
+        }
+        this.query = undefined;
+        this.order = undefined;
+        this.attributes = undefined;
+        this.include = undefined;
+        this.pagination = true;
+        this.lookup_field = "id";
+        this.object_name = "obj";
+    }
+
     async create(){
         try {
-            this.#check_model();
+            this.check_model();
             let result = await this.model.create(this.req.body);
             return {
                 status: "success",
-                type: "created",
+                type: "create",
                 result: result
             }
         }
         catch (e){
             if (e.errors !== undefined){
-                return this.#errorFields(e.errors);
+                return this.errorFields(e.errors);
             }
             else {
-                return this.#internalServerError(e);
+                return this.internalServerError(e);
             }
         }
     }
 
     async createRedirect(){
         try {
-            this.#check_model();
+            this.check_model();
             let result = await this.model.create(this.req.body);
             this.req.session['query_result'] = {
                 status: "success",
-                type: "created",
+                type: "create",
                 result: result
             }
             this.redirect();
         }
         catch (e){
             if (e.errors !== undefined){
-                this.req.session['query_result'] = this.#errorFields(e.errors);
+                this.req.session['query_result'] = this.errorFields(e.errors);
             }
             else {
-                this.req.session['query_result'] = this.#internalServerError(e);
+                this.req.session['query_result'] = this.internalServerError(e);
             }
             this.redirect();
         }
@@ -94,7 +100,7 @@ class GenericView {
 
     async findAll(){
         try {
-            this.#check_model();
+            this.check_model();
             if (this.pagination){
                 let page = 0;
                 if (this.req.query.page !== undefined){
@@ -119,7 +125,6 @@ class GenericView {
                     limit,
                     offset,
                     order: this.order,
-                    raw: true
                 });
 
                 return {
@@ -133,7 +138,6 @@ class GenericView {
                     attributes: this.attributes,
                     where: this.query,
                     order: this.order,
-                    raw: true
                 });
 
                 return {
@@ -146,13 +150,13 @@ class GenericView {
                 throw `\"pagination\" should be in Bolean. Received ${typeof this.pagination}.`;
             }
         } catch (e) {
-            return this.#internalServerError(e);
+            return this.internalServerError(e);
         }
     }
 
     async findAllView(){
         try {
-            this.#check_model();
+            this.check_model();
             if (this.pagination){
                 let page = 0;
                 if (this.req.query.page !== undefined){
@@ -177,7 +181,7 @@ class GenericView {
                     limit,
                     offset,
                     order: this.order,
-                    raw: true
+                    include: this.include
                 });
 
                 this.template_options[this.object_name] = {
@@ -192,7 +196,7 @@ class GenericView {
                     attributes: this.attributes,
                     where: this.query,
                     order: this.order,
-                    raw: true
+                    include: this.include
                 });
 
                 this.template_options[this.object_name] = {
@@ -206,14 +210,14 @@ class GenericView {
                 throw `\"pagination\" should be in Bolean. Received ${typeof this.pagination}.`;
             }
         } catch (e) {
-            this.template_options[this.object_name] = this.#internalServerError(e);
+            this.template_options[this.object_name] = this.internalServerError(e);
             this.view();
         }
     }
 
     async findOne(){
         try {
-            this.#check_model();
+            this.check_model();
             let result = await this.model.findAll({
                 where: {
                     id: this.req.params[this.lookup_field]
@@ -235,13 +239,13 @@ class GenericView {
             }
         }
         catch (e){
-            return this.#internalServerError(e);
+            return this.internalServerError(e);
         }
     }
 
     async findOneView(){
         try {
-            this.#check_model();
+            this.check_model();
             let result = await this.model.findAll({
                 where: {
                     id: this.req.params[this.lookup_field]
@@ -272,7 +276,7 @@ class GenericView {
 
     async update(){
         try {
-            this.#check_model();
+            this.check_model();
             let oldData = await this.model.findAll({
                 where: {
                     id: this.req.params[this.lookup_field]
@@ -288,7 +292,7 @@ class GenericView {
                 return {
                     status: "success",
                     type: "update",
-                    result: this.#compare(this.req.body, oldData[0])
+                    result: this.compare(this.req.body, oldData[0])
                 }
             }
             else {
@@ -300,17 +304,17 @@ class GenericView {
         }
         catch (e){
             if (e.errors !== undefined){
-                return this.#errorFields(e.errors);
+                return this.errorFields(e.errors);
             }
             else {
-                return this.#internalServerError(e);
+                return this.internalServerError(e);
             }
         }
     }
 
     async updateRedirect(){
         try {
-            this.#check_model();
+            this.check_model();
             let oldData = await this.model.findAll({
                 where: {
                     id: this.req.params[this.lookup_field]
@@ -326,7 +330,7 @@ class GenericView {
                 this.req.session['query_result'] = {
                     status: "success",
                     type: "update",
-                    result: this.#compare(this.req.body, oldData[0])
+                    result: this.compare(this.req.body, oldData[0])
                 }
                 this.redirect();
             }
@@ -336,10 +340,10 @@ class GenericView {
         }
         catch (e){
             if (e.errors !== undefined){
-                this.req.session['query_result'] = this.#errorFields(e.errors);
+                this.req.session['query_result'] = this.errorFields(e.errors);
             }
             else {
-                this.req.session['query_result'] = this.#internalServerError(e);
+                this.req.session['query_result'] = this.internalServerError(e);
             }
             this.redirect();
         }
@@ -347,7 +351,7 @@ class GenericView {
 
     async delete(){
         try {
-            this.#check_model();
+            this.check_model();
             let data = await this.model.findAll({
                 where: {
                     id: this.req.params[this.lookup_field]
@@ -364,7 +368,7 @@ class GenericView {
                     return {
                         status: "success",
                         type: "delete",
-                        result: data
+                        result: data[0]
                     }
                 }
             }
@@ -376,13 +380,13 @@ class GenericView {
             }
         }
         catch (e){
-            return this.#internalServerError(e);
+            return this.internalServerError(e);
         }
     }
 
     async deleteRedirect(){
         try {
-            this.#check_model();
+            this.check_model();
             let data = await this.model.findAll({
                 where: {
                     id: this.req.params[this.lookup_field]
@@ -399,7 +403,7 @@ class GenericView {
                     this.req.session['query_result'] = {
                         status: "success",
                         type: "delete",
-                        result: data
+                        result: data[0]
                     }
                     this.redirect();
                 }
@@ -409,7 +413,7 @@ class GenericView {
             }
         }
         catch (e){
-            this.req.session['query_result'] = this.#internalServerError(e);
+            this.req.session['query_result'] = this.internalServerError(e);
             this.redirect();
         }
     }
@@ -440,7 +444,9 @@ class GenericView {
         this.next = next;
 
         // CSRF
-        this.template_options['_csrf'] = req.csrfToken();
+        if (typeof req.csrfToken === "function") { 
+            this.template_options['_csrf'] = req.csrfToken();
+        }
         
         // Check if there's query_result in session
         if (req.session.query_result !== undefined){
@@ -449,7 +455,7 @@ class GenericView {
         }
     }
 
-    #internalServerError(e){
+    internalServerError(e){
         console.error(e);
         return {
             status: "error",
@@ -457,7 +463,7 @@ class GenericView {
         }
     }
 
-    #errorFields(errors){
+    errorFields(errors){
         console.log(errors);
         let result = {
             status: "error",
@@ -475,25 +481,27 @@ class GenericView {
         return result;
     }
 
-    #compare(new_data, old_data){
-        let result = [];
+    compare(new_data, old_data){
+        let result = {};
         Object.entries(new_data).map((data) => {
             if (old_data[data[0]] !== undefined){
-                result.push({
-                    [data[0]]: {
-                        new: data[1],
-                        old: old_data[data[0]]
-                    }
-                })
+                result[data[0]] = {
+                    new: data[1],
+                    old: old_data[data[0]]
+                };
             }
         });
         return result;
     }
 
-    #check_model(){
+    check_model(){
         if (this.model === undefined){
             throw `"model" is missing. Received undefined.`
         }
+    }
+
+    errorView(error_code){
+        this.next(createError(error_code));
     }
 };
   
